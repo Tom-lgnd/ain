@@ -5,6 +5,8 @@
 
 #include <txmempool.h>
 
+#include <limits>
+
 #include <ain_rs_exports.h>
 #include <chainparams.h>
 #include <consensus/consensus.h>
@@ -624,6 +626,14 @@ void CTxMemPool::resetAccountsView() {
     acview = std::make_unique<CCustomCSView>(*pcustomcsview);
 }
 
+// Preserve existing pre-activation policy; once the aggregation rule applies
+// to the next block, rebuild the mempool account view at that prospective height.
+static int MempoolAccountRebuildHeight(int tipHeight) {
+    const auto activation = Params().GetConsensus().TransferAggregationHeight;
+    const int nextHeight = tipHeight < std::numeric_limits<int>::max() ? tipHeight + 1 : tipHeight;
+    return activation != std::numeric_limits<int>::max() && nextHeight >= activation ? nextHeight : tipHeight;
+}
+
 /**
  * Called when a block is connected. Removes from mempool and updates the miner fee estimator.
  */
@@ -652,7 +662,11 @@ void CTxMemPool::removeForBlock(const std::vector<CTransactionRef> &vtx, unsigne
     }
 
     if (pcustomcsview) {
-        accountsViewDirty |= forceRebuildForReorg;
+        const int rebuildHeight = MempoolAccountRebuildHeight(nBlockHeight);
+        const auto activation = Params().GetConsensus().TransferAggregationHeight;
+        // Even an empty H-1 block changes the rules for pending transactions.
+        accountsViewDirty |= forceRebuildForReorg ||
+                             (activation != std::numeric_limits<int>::max() && rebuildHeight == activation);
         CTransactionRef ptx{};
 
         CCoinsView dummy;
@@ -661,7 +675,7 @@ void CTxMemPool::removeForBlock(const std::vector<CTransactionRef> &vtx, unsigne
         CCoinsViewMemPool viewMemPool(&coins_cache, *this);
         view.SetBackend(viewMemPool);
 
-        rebuildAccountsView(nBlockHeight, view);
+        rebuildAccountsView(rebuildHeight, view);
     }
 
     lastRollingFeeUpdate = GetTime();
@@ -680,7 +694,7 @@ void CTxMemPool::rebuildViews() {
     view.SetBackend(viewMemPool);
 
     setAccountViewDirty();
-    rebuildAccountsView(::ChainActive().Tip()->nHeight, view);
+    rebuildAccountsView(MempoolAccountRebuildHeight(::ChainActive().Tip()->nHeight), view);
 }
 
 void CTxMemPool::_clear() {
@@ -1265,64 +1279,82 @@ void CTxMemPool::rebuildAccountsView(int height, const CCoinsViewCache &coinsCac
         return;
     }
 
-    CAmount txfee{};
-    resetAccountsView();
-    CCustomCSView viewDuplicate(accountsView());
+    const auto activation = Params().GetConsensus().TransferAggregationHeight;
+    const bool checkedAggregation = activation != std::numeric_limits<int>::max() && height >= activation;
+    for (;;) {
+        CAmount txfee{};
+        resetAccountsView();
+        CCustomCSView viewDuplicate(accountsView());
 
-    setEntries staged;
-    std::vector<CTransactionRef> vtx;
+        setEntries staged;
+        std::vector<CTransactionRef> vtx;
 
-    const auto isEvmEnabledForBlock = IsEVMEnabled(viewDuplicate);
+        const auto isEvmEnabledForBlock = IsEVMEnabled(viewDuplicate);
 
-    // Check custom TX consensus types are now not in conflict with account layer
-    auto &txsByEntryTime = mapTx.get<entry_time>();
-    for (auto it = txsByEntryTime.begin(); it != txsByEntryTime.end(); ++it) {
-        CValidationState state;
-        const auto &tx = it->GetTx();
-        const auto removeTxBackToStage = [&it](const indexed_transaction_set &mapTx,
-                                               CTxMemPool::setEntries &staged,
-                                               std::vector<CTransactionRef> &vtx,
-                                               const CTransaction &tx) {
-            LogPrint(BCLog::MEMPOOL, "re-stage/remove TX: %s (cause: accountsView)\n", tx.GetHash().GetHex());
-            staged.insert(mapTx.project<0>(it));
-            vtx.push_back(it->GetSharedTx());
-        };
+        // Check custom TX consensus types are now not in conflict with account layer
+        auto &txsByEntryTime = mapTx.get<entry_time>();
+        for (auto it = txsByEntryTime.begin(); it != txsByEntryTime.end(); ++it) {
+            if (checkedAggregation && staged.count(mapTx.project<0>(it))) {
+                continue;
+            }
+            CValidationState state;
+            const auto &tx = it->GetTx();
+            const auto removeTxBackToStage = [this, &it, checkedAggregation](
+                                                const indexed_transaction_set &mapTx,
+                                                CTxMemPool::setEntries &staged,
+                                                std::vector<CTransactionRef> &vtx,
+                                                const CTransaction &tx) {
+                LogPrint(BCLog::MEMPOOL, "re-stage/remove TX: %s (cause: accountsView)\n", tx.GetHash().GetHex());
+                if (checkedAggregation) {
+                    CalculateDescendants(mapTx.project<0>(it), staged);
+                } else {
+                    staged.insert(mapTx.project<0>(it));
+                }
+                vtx.push_back(it->GetSharedTx());
+            };
 
-        if (!Consensus::CheckTxInputs(tx, state, coinsCache, viewDuplicate, height, txfee, Params())) {
-            removeTxBackToStage(mapTx, staged, vtx, tx);
+            if (!Consensus::CheckTxInputs(tx, state, coinsCache, viewDuplicate, height, txfee, Params())) {
+                removeTxBackToStage(mapTx, staged, vtx, tx);
+                continue;
+            }
+            auto blockCtx = BlockContext{
+                static_cast<uint32_t>(height),
+                static_cast<uint64_t>(it->GetTime()),
+                Params().GetConsensus(),
+                &viewDuplicate,
+                isEvmEnabledForBlock,
+                {},
+                true,
+            };
+            auto txCtx = TransactionContext{
+                coinsCache,
+                tx,
+                blockCtx,
+            };
+            auto res = ApplyCustomTx(blockCtx, txCtx);
+
+            if (!res && (checkedAggregation || (res.code & CustomTxErrCodes::Fatal))) {
+                removeTxBackToStage(mapTx, staged, vtx, tx);
+            }
+        }
+
+        RemoveStaged(staged, !checkedAggregation, MemPoolRemovalReason::BLOCK);
+
+        for (const auto &tx : vtx) {
+            removeConflicts(*tx);
+            ClearPrioritisation(tx->GetHash());
+        }
+
+        if (checkedAggregation && !staged.empty()) {
+            // A descendant may already have contributed to the temporary view.
+            // Discard it and replay survivors; each retry removes at least one tx.
             continue;
         }
-        auto blockCtx = BlockContext{
-            static_cast<uint32_t>(height),
-            static_cast<uint64_t>(it->GetTime()),
-            Params().GetConsensus(),
-            &viewDuplicate,
-            isEvmEnabledForBlock,
-            {},
-            true,
-        };
-        auto txCtx = TransactionContext{
-            coinsCache,
-            tx,
-            blockCtx,
-        };
-        auto res = ApplyCustomTx(blockCtx, txCtx);
-
-        if (!res && (res.code & CustomTxErrCodes::Fatal)) {
-            removeTxBackToStage(mapTx, staged, vtx, tx);
-        }
+        viewDuplicate.Flush();
+        accountsViewDirty = false;
+        forceRebuildForReorg = false;
+        return;
     }
-
-    RemoveStaged(staged, true, MemPoolRemovalReason::BLOCK);
-
-    for (const auto &tx : vtx) {
-        removeConflicts(*tx);
-        ClearPrioritisation(tx->GetHash());
-    }
-
-    viewDuplicate.Flush();
-    accountsViewDirty = false;
-    forceRebuildForReorg = false;
 }
 
 void CTxMemPool::AddToStaged(setEntries &staged,

@@ -348,6 +348,7 @@ BASE_SCRIPTS = [
     "feature_transfer_sum_block_df24.py",
     "feature_transfer_sum_activation.py",
     "feature_transfer_sum_activation_reorg.py",
+    "feature_transfer_sum_activation_mempool.py",
     "feature_listaccounts_pagination.py",
     "feature_on_chain_government.py",
     "feature_on_chain_government_voting_period_alignment.py",
