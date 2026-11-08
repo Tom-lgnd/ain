@@ -1,0 +1,31 @@
+Temporary test directory at /tmp/test_runner_20261108_203440
+1/11 - feature_accounts_validation.py passed, Duration: 3 s
+2/11 - feature_any_accounts_to_accounts.py passed, Duration: 40 s
+3/11 - feature_poolpair_liquidity.py passed, Duration: 23 s
+4/11 - feature_sendtokenstoaddress.py passed, Duration: 19 s
+5/11 - feature_transfer_sum_validation.py passed, Duration: 3 s
+6/11 - feature_transfer_sum_df24.py passed, Duration: 3 s
+7/11 - feature_transfer_sum_raw_df24.py passed, Duration: 3 s
+8/11 - feature_transfer_sum_block_df24.py passed, Duration: 4 s
+9/11 - feature_transfer_sum_activation.py passed, Duration: 9 s
+10/11 - feature_transfer_sum_activation_reorg.py passed, Duration: 7 s
+11/11 - feature_transfer_sum_activation_mempool.py passed, Duration: 4 s
+Remaining jobs: [feature_transfer_sum_activation_mempool.py]
+
+TEST                                       | STATUS    | DURATION
+
+feature_accounts_validation.py             | ✓ Passed  | 3 s
+feature_any_accounts_to_accounts.py        | ✓ Passed  | 40 s
+feature_poolpair_liquidity.py              | ✓ Passed  | 23 s
+feature_sendtokenstoaddress.py             | ✓ Passed  | 19 s
+feature_transfer_sum_activation.py         | ✓ Passed  | 9 s
+feature_transfer_sum_activation_mempool.py | ✓ Passed  | 4 s
+feature_transfer_sum_activation_reorg.py   | ✓ Passed  | 7 s
+feature_transfer_sum_block_df24.py         | ✓ Passed  | 4 s
+feature_transfer_sum_df24.py               | ✓ Passed  | 3 s
+feature_transfer_sum_raw_df24.py           | ✓ Passed  | 3 s
+feature_transfer_sum_validation.py         | ✓ Passed  | 3 s
+
+ALL                                        | ✓ Passed  | 118 s (accumulated) 
+Runtime: 121 s
+

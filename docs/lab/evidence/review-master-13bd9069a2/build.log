@@ -1,0 +1,11 @@
+make: Entering directory '/work/build-amd64/src'
+make[1]: Entering directory '/work/build-amd64'
+make[1]: Leaving directory '/work/build-amd64'
+  CXX      libdefi_common_a-chainparams.o
+  AR       libdefi_common.a
+  CXX      libdefi_util_a-clientversion.o
+  AR       libdefi_util.a
+  CXXLD    defid
+  CXXLD    defi-cli
+  CXXLD    test/test_defi
+make: Leaving directory '/work/build-amd64/src'

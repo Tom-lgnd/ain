@@ -1,0 +1,6 @@
+Tested source: 13bd9069a267944d70e1c8d13fbe32ee457942f0
+Build: exit 0
+C++ suite: 417 passed, 1 skipped; 5428209 assertions passed; exit 0
+Selected functional tests: 11 passed; runtime 121 seconds; exit 0
+Environment: AMD64 Docker lab; isolated regtest with dummypos.
+Production PoS and historical mainnet compatibility remain unverified.

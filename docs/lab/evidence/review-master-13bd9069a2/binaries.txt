@@ -1,0 +1,4 @@
+13bd9069a267944d70e1c8d13fbe32ee457942f0
+d1fceb459adbe2857cc9a57cc2742e0e5eaa57f7cf4ab6ea0c78ed0a1968b9fb  build-amd64/src/defid
+f7d98ffbee493eb9894961d02e9f24336c1d450cef0d6b01168f7e3b83ade419  build-amd64/src/defi-cli
+08eb0dd1ffb6ae0957de84178c5b2dca4333b1375e613c3c65827e2375c6947d  build-amd64/src/test/test_defi

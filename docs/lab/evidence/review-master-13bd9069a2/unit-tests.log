@@ -1,0 +1,35 @@
+Running 417 test cases...
+[1;36;49mTest case blockencodings_tests/NonCoinbasePreforwardRTTest did not check any assertions[0;39;49m
+[1;36;49mTest case blockfilter_tests/blockfilters_json_test did not check any assertions[0;39;49m
+[1;36;49mTest case bloom_tests/merkle_block_1 did not check any assertions[0;39;49m
+[1;36;49mTest case bloom_tests/merkle_block_2 did not check any assertions[0;39;49m
+[1;36;49mTest case bloom_tests/merkle_block_2_with_update_none did not check any assertions[0;39;49m
+[1;36;49mTest case bloom_tests/merkle_block_3_and_serialize did not check any assertions[0;39;49m
+[1;36;49mTest case bloom_tests/merkle_block_4 did not check any assertions[0;39;49m
+[1;36;49mTest case bloom_tests/merkle_block_4_test_p2pubkey_only did not check any assertions[0;39;49m
+[1;36;49mTest case bloom_tests/merkle_block_4_test_update_none did not check any assertions[0;39;49m
+[1;36;49mTest case validation_tests/block_subsidy_test did not check any assertions[0;39;49m
+[1;36;49mTest case validation_tests/subsidy_limit_test did not check any assertions[0;39;49m
+[1;36;49mTest case merkleblock_tests/merkleblock_construct_from_txids_found did not check any assertions[0;39;49m
+[1;36;49mTest case merkleblock_tests/merkleblock_construct_from_txids_not_found did not check any assertions[0;39;49m
+[1;36;49mTest case oracles_tests/check_oracleid_compare_operator did not check any assertions[0;39;49m
+[1;36;49mTest case oracles_tests/oracleid_serialization_test did not check any assertions[0;39;49m
+[1;36;49mTest case oracles_tests/oracle_serialization_test did not check any assertions[0;39;49m
+[1;36;49mTest case oracles_tests/remove_oracle_test did not check any assertions[0;39;49m
+[1;36;49mTest case oracles_tests/update_oracle_test did not check any assertions[0;39;49m
+[1;36;49mTest case pow_tests/get_next_work did not check any assertions[0;39;49m
+[1;36;49mTest case pow_tests/get_next_work_pow_limit did not check any assertions[0;39;49m
+[1;36;49mTest case pow_tests/get_next_work_lower_limit_actual did not check any assertions[0;39;49m
+[1;36;49mTest case rpc_tests/rpc_rawsign did not check any assertions[0;39;49m
+[1;36;49mTest case sync_tests/simulate_potential_deadlock did not check any assertions[0;39;49m
+[1;36;49mTest case txindex_tests/txindex_initial_sync did not check any assertions[0;39;49m
+[1;36;49mTest case tx_validationcache_tests/tx_mempool_block_doublespend did not check any assertions[0;39;49m
+[1;36;49mTest case tx_validationcache_tests/checkinputs_test did not check any assertions[0;39;49m
+[1;36;49mTest case validation_block_tests/processnewblock_signals_ordering did not check any assertions[0;39;49m
+[1;36;49mTest case validation_block_tests/mempool_locks_reorg did not check any assertions[0;39;49m
+
+Test module "DeFi Blockchain Test Suite" has passed with:
+  417 test cases out of 418 passed
+  1 test case out of 418 skipped
+  5428209 assertions out of 5428209 passed
+
