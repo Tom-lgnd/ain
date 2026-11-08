@@ -1447,6 +1447,7 @@ void CDevNetParams::UpdateActivationParametersFromArgs() {
 void CRegTestParams::UpdateActivationParametersFromArgs()
 {
     SetupCommonArgActivationParams(consensus);
+    UpdateHeightValidation("Transfer aggregation", "-transferaggregationheight", consensus.TransferAggregationHeight);
     if (!gArgs.IsArgSet("-vbparams")) return;
 
     for (const std::string& strDeployment : gArgs.GetArgs("-vbparams")) {

@@ -104,6 +104,8 @@ struct Params {
     int DF22MetachainHeight;
     int DF23Height;
     int DF24Height;
+    // Lab candidate: no production activation is scheduled. INT_MAX disables it.
+    int TransferAggregationHeight{std::numeric_limits<int>::max()};
 
     /** Foundation share after AMK, normalized to COIN = 100% */
     CAmount foundationShareDFIP1;

@@ -107,7 +107,7 @@ CAccounts SelectAccountsByTargetBalances(const CAccounts &accounts,
     }
 
     const auto selectedBalancesSum = SumAllTransfers(selectedAccountsBalances);
-    if (selectedBalancesSum != targetBalances) {
+    if (!selectedBalancesSum || *selectedBalancesSum != targetBalances) {
         // we have not enough tokens balance to transfer
         return {};
     }

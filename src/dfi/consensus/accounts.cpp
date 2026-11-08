@@ -30,10 +30,14 @@ Res CAccountsConsensus::operator()(const CUtxosToAccountMessage &obj) const {
         return burnt;
     }
 
-    const auto mustBeBurnt = SumAllTransfers(obj.to);
-    if (*burnt.val != mustBeBurnt) {
+    const auto mustBeBurnt = SumAllTransfersForHeight(
+        obj.to, txCtx.GetHeight(), txCtx.GetConsensus().TransferAggregationHeight);
+    if (!mustBeBurnt) {
+        return mustBeBurnt;
+    }
+    if (*burnt.val != *mustBeBurnt) {
         return Res::Err(
-            "transfer tokens mismatch burnt tokens: (%s) != (%s)", mustBeBurnt.ToString(), burnt.val->ToString());
+            "transfer tokens mismatch burnt tokens: (%s) != (%s)", mustBeBurnt->ToString(), burnt.val->ToString());
     }
 
     // transfer
@@ -77,7 +81,12 @@ Res CAccountsConsensus::operator()(const CAccountToAccountMessage &obj) const {
     }
 
     // transfer
-    if (auto res = SubBalanceDelShares(obj.from, SumAllTransfers(obj.to)); !res) {
+    const auto total = SumAllTransfersForHeight(
+        obj.to, txCtx.GetHeight(), txCtx.GetConsensus().TransferAggregationHeight);
+    if (!total) {
+        return total;
+    }
+    if (auto res = SubBalanceDelShares(obj.from, *total); !res) {
         return res;
     }
 
@@ -93,10 +102,18 @@ Res CAccountsConsensus::operator()(const CAnyAccountsToAccountsMessage &obj) con
     }
 
     // compare
-    const auto sumFrom = SumAllTransfers(obj.from);
-    const auto sumTo = SumAllTransfers(obj.to);
+    const auto sumFrom = SumAllTransfersForHeight(
+        obj.from, txCtx.GetHeight(), txCtx.GetConsensus().TransferAggregationHeight);
+    if (!sumFrom) {
+        return sumFrom;
+    }
+    const auto sumTo = SumAllTransfersForHeight(
+        obj.to, txCtx.GetHeight(), txCtx.GetConsensus().TransferAggregationHeight);
+    if (!sumTo) {
+        return sumTo;
+    }
 
-    if (sumFrom != sumTo) {
+    if (*sumFrom != *sumTo) {
         return Res::Err("sum of inputs (from) != sum of outputs (to)");
     }
 

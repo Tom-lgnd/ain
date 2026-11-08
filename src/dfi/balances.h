@@ -9,6 +9,7 @@
 #include <script/script.h>
 #include <serialize.h>
 #include <cstdint>
+#include <limits>
 
 struct CBalances {
     TAmounts balances;
@@ -262,12 +263,30 @@ struct CStatsTokenBalances {
     }
 };
 
-inline CBalances SumAllTransfers(const CAccounts &to) {
+[[nodiscard]] inline ResVal<CBalances> SumAllTransfers(const CAccounts &to) {
     CBalances sum;
     for (const auto &kv : to) {
-        sum.AddBalances(kv.second.balances);
+        if (auto res = sum.AddBalances(kv.second.balances); !res) {
+            return res;
+        }
     }
-    return sum;
+    return {std::move(sum), Res::Ok()};
+}
+
+// Consensus replay must preserve the original accumulator before activation,
+// including partial mutation and continued processing after an AddBalances error.
+// RPC callers continue to use the always-checked SumAllTransfers above.
+[[nodiscard]] inline ResVal<CBalances> SumAllTransfersForHeight(
+    const CAccounts &to, uint32_t height, int activationHeight) {
+    if (activationHeight != std::numeric_limits<int>::max() &&
+        height >= static_cast<uint32_t>(activationHeight)) {
+        return SumAllTransfers(to);
+    }
+    CBalances sum;
+    for (const auto &kv : to) {
+        (void)sum.AddBalances(kv.second.balances);
+    }
+    return {std::move(sum), Res::Ok()};
 }
 
 struct BalanceKey {

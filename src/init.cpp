@@ -532,6 +532,7 @@ void SetupServerArgs()
     gArgs.AddArg("-grandcentralepilogueheight", "Grand Central Epilogue fork activation height (regtest only)", ArgsManager::ALLOW_ANY | ArgsManager::DEBUG_ONLY, OptionsCategory::CHAINPARAMS);
     gArgs.AddArg("-metachainheight", "Metachain fork activation height (regtest only)", ArgsManager::ALLOW_ANY | ArgsManager::DEBUG_ONLY, OptionsCategory::CHAINPARAMS);
     gArgs.AddArg("-df23height", "DF23 fork activation height (regtest only)", ArgsManager::ALLOW_ANY | ArgsManager::DEBUG_ONLY, OptionsCategory::CHAINPARAMS);
+    gArgs.AddArg("-transferaggregationheight", "Checked transfer aggregation activation height (regtest only; -1 disables)", ArgsManager::ALLOW_ANY | ArgsManager::DEBUG_ONLY, OptionsCategory::CHAINPARAMS);
     gArgs.AddArg("-df24height", "DF24 fork activation height (regtest only)", ArgsManager::ALLOW_ANY | ArgsManager::DEBUG_ONLY, OptionsCategory::CHAINPARAMS);
     gArgs.AddArg("-jellyfish_regtest", "Configure the regtest network for jellyfish testing", ArgsManager::ALLOW_ANY | ArgsManager::DEBUG_ONLY, OptionsCategory::OPTIONS);
     gArgs.AddArg("-regtest-skip-loan-collateral-validation", "Skip loan collateral check for jellyfish testing", ArgsManager::ALLOW_ANY | ArgsManager::DEBUG_ONLY, OptionsCategory::OPTIONS);

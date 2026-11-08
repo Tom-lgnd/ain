@@ -812,7 +812,9 @@ UniValue utxostoaccount(const JSONRPCRequest &request) {
     scriptBurn << OP_RETURN;
 
     // burn
-    const auto toBurn = SumAllTransfers(msg.to);
+    const auto toBurn = SumAllTransfers(msg.to).ValOrException([](uint32_t, const std::string &message) {
+        return JSONRPCError(RPC_INVALID_PARAMETER, message);
+    });
     if (toBurn.balances.empty()) {
         throw JSONRPCError(RPC_INVALID_PARAMETER, "zero amounts");
     }
@@ -986,7 +988,10 @@ UniValue accounttoaccount(const JSONRPCRequest &request) {
     auto ownershipCheck = gArgs.GetBoolArg("-dvmownerskipcheck", DEFAULT_DVM_OWNERSHIP_CHECK);
     msg.to = DecodeRecipientsDefaultInternal(pwallet, request.params[1].get_obj(), ownershipCheck);
 
-    if (SumAllTransfers(msg.to).balances.empty()) {
+    const auto total = SumAllTransfers(msg.to).ValOrException([](uint32_t, const std::string &message) {
+        return JSONRPCError(RPC_INVALID_PARAMETER, message);
+    });
+    if (total.balances.empty()) {
         throw JSONRPCError(RPC_INVALID_PARAMETER, "zero amounts");
     }
 
@@ -1099,7 +1104,9 @@ UniValue accounttoutxos(const JSONRPCRequest &request) {
     msg.from = DecodeScript(request.params[0].get_str());
     RejectErc55Address(msg.from);
     const auto to = DecodeRecipients(pwallet->chain(), request.params[1]);
-    msg.balances = SumAllTransfers(to);
+    msg.balances = SumAllTransfers(to).ValOrException([](uint32_t, const std::string &message) {
+        return JSONRPCError(RPC_INVALID_PARAMETER, message);
+    });
     if (msg.balances.balances.empty()) {
         throw JSONRPCError(RPC_INVALID_PARAMETER, "zero amounts");
     }
@@ -2126,7 +2133,9 @@ UniValue sendtokenstoaddress(const JSONRPCRequest &request) {
     auto ownershipCheck = gArgs.GetBoolArg("-dvmownerskipcheck", DEFAULT_DVM_OWNERSHIP_CHECK);
     msg.to = DecodeRecipientsDefaultInternal(pwallet, request.params[1].get_obj(), ownershipCheck);
 
-    const CBalances sumTransfersTo = SumAllTransfers(msg.to);
+    const CBalances sumTransfersTo = SumAllTransfers(msg.to).ValOrException([](uint32_t, const std::string &message) {
+        return JSONRPCError(RPC_INVALID_PARAMETER, message);
+    });
     if (sumTransfersTo.balances.empty()) {
         throw JSONRPCError(RPC_INVALID_PARAMETER, "zero amounts in \"to\" param");
     }
