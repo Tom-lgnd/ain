@@ -1455,7 +1455,7 @@ static void TestOtherProcess(fs::path dirname, fs::path lockname, int fd)
             break;
         case ExitCommand:
             close(fd);
-            exit(0);
+            _exit(0);
         default:
             assert(0);
         }
@@ -1471,7 +1471,7 @@ BOOST_AUTO_TEST_CASE(test_LockDirectory)
     // Revert SIGCHLD to default, otherwise boost.test will catch and fail on
     // it: there is BOOST_TEST_IGNORE_SIGCHLD but that only works when defined
     // at build-time of the boost library
-//    void (*old_handler)(int) = signal(SIGCHLD, SIG_DFL);
+    void (*old_handler)(int) = signal(SIGCHLD, SIG_DFL);
 
     // Fork another process for testing before creating the lock, so that we
     // won't fork while holding the lock (which might be undefined, and is not
@@ -1532,19 +1532,19 @@ BOOST_AUTO_TEST_CASE(test_LockDirectory)
     // When we try to probe the lock now, it should succeed.
     BOOST_CHECK_EQUAL(util::LockDirectory(dirname, lockname, true), util::LockResult::Success);
 
-    // Re-lock the lock in the child process, then wait for it to exit, check
-    // successful return. After that, we check that exiting the process
-    // has released the lock as we would expect by probing it.
-//    int processstatus;
-//    BOOST_CHECK_EQUAL(write(fd[1], &LockCommand, 1), 1);
-//    BOOST_CHECK_EQUAL(write(fd[1], &ExitCommand, 1), 1);
-//    BOOST_CHECK_EQUAL(waitpid(pid, &processstatus, 0), pid); // TODO: (temp) !!!
-//    BOOST_CHECK_EQUAL(processstatus, 0);
-//    BOOST_CHECK_EQUAL(LockDirectory(dirname, lockname, true), true);
-//
-//    // Restore SIGCHLD
-//    signal(SIGCHLD, old_handler);
-//    BOOST_CHECK_EQUAL(close(fd[1]), 0); // Close our side of the socketpair
+    // Terminate and reap the child before continuing the test suite.
+    int processstatus = 0;
+    BOOST_REQUIRE_EQUAL(write(fd[1], &ExitCommand, 1), 1);
+    BOOST_REQUIRE_EQUAL(waitpid(pid, &processstatus, 0), pid);
+    BOOST_REQUIRE_MESSAGE(
+        WIFEXITED(processstatus),
+        "Child did not exit normally: status=" << processstatus
+        << ", signal=" << (WIFSIGNALED(processstatus) ? WTERMSIG(processstatus) : 0));
+    BOOST_CHECK_EQUAL(WEXITSTATUS(processstatus), 0);
+    BOOST_CHECK_EQUAL(close(fd[1]), 0);
+
+    // Restore the previous signal handler.
+    signal(SIGCHLD, old_handler);
 #endif
     // Clean up
     ReleaseDirectoryLocks();
