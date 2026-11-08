@@ -1,0 +1,40 @@
+name: defichain-lab
+
+x-node: &node
+  image: defichain-lab:4.2.5
+  platform: linux/amd64
+  init: true
+  stop_grace_period: 60s
+  networks:
+    - isolated
+  command:
+    - -conf=/etc/defichain/defi.conf
+    - -datadir=/data
+
+services:
+  node1:
+    <<: *node
+    volumes:
+      - node1-data:/data
+      - ./config/node1.conf:/etc/defichain/defi.conf:ro
+
+  node2:
+    <<: *node
+    volumes:
+      - node2-data:/data
+      - ./config/node2.conf:/etc/defichain/defi.conf:ro
+
+  node3:
+    <<: *node
+    volumes:
+      - node3-data:/data
+      - ./config/node3.conf:/etc/defichain/defi.conf:ro
+
+networks:
+  isolated:
+    internal: true
+
+volumes:
+  node1-data:
+  node2-data:
+  node3-data:

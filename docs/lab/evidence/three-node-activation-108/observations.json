@@ -1,0 +1,467 @@
+{
+  "test": {
+    "source": "2N1kvNeqYvJMgpfSqWv7RHLF2HLCN3h1hzL",
+    "destination": "2NCLnDygJSRkea5DoCoNtGQ12ongEbYGiWo",
+    "activation": 108,
+    "start_tip": "164d5604ebc532fac993476bba2a87cd7957cbef4771008f79089fbd8a288222",
+    "funding_txid": "5b54f6986c471af03fcb2a53220cbeebc1cb87bb5c86716cd38e92d8a751ef87",
+    "funding_block": "e736719e4620428cb9ff9b5aaf1a98e01eb0253c9896b9e19ea1b0a53980c2a9",
+    "pre_activation_txid": "bbdc323ae258c6d73a3494ea76367ebe516d7a3fb4f1e47e657c99f0391c65a6",
+    "pre_activation_block": "a5892d84aa4e2940d1114d4d1e6f5c98c3fec7803711f24f8cb83f7a2c4af81c",
+    "block107": "93ac42eacd8fd5e48a94cd0fc36dd25e8b4a7baa25199f9ea39bf1392d8358d7",
+    "activation_txid": "e319ce800624711b71b64c2cd91432e78a7289f77c461bb8a99b91ca4a33c788",
+    "activation_block": "30f0530cd83157c80516cfd3184bf0724e80543ec8c4f8a45e62653112669438"
+  },
+  "nodes": [
+    {
+      "node": "defichain-lab-node1-1",
+      "image": "defichain-lab:review-13bd9069a2",
+      "image_id": "sha256:51c2a26391020ae7d5b2febb5ca71f42c80f551c72218b6d97df59c3d23fe26b",
+      "command": [
+        "-conf=/etc/defichain/defi.conf",
+        "-datadir=/data",
+        "-transferaggregationheight=108",
+        "-dvmownerskipcheck=0"
+      ],
+      "chain": {
+        "chain": "regtest",
+        "blocks": 108,
+        "headers": 108,
+        "bestblockhash": "30f0530cd83157c80516cfd3184bf0724e80543ec8c4f8a45e62653112669438",
+        "difficulty": 4.656542373906925e-10,
+        "mediantime": 1794172262,
+        "verificationprogress": 1,
+        "initialblockdownload": false,
+        "chainwork": "00000000000000000000000000000000000000000000000000000000000000da",
+        "size_on_disk": 47574,
+        "pruned": false,
+        "softforks": {
+          "amk": {
+            "type": "buried",
+            "active": true,
+            "height": 10
+          },
+          "bayfront": {
+            "type": "buried",
+            "active": true,
+            "height": 10
+          },
+          "clarkequay": {
+            "type": "buried",
+            "active": true,
+            "height": 10
+          },
+          "dakota": {
+            "type": "buried",
+            "active": true,
+            "height": 10
+          },
+          "dakotacrescent": {
+            "type": "buried",
+            "active": true,
+            "height": 10
+          },
+          "eunos": {
+            "type": "buried",
+            "active": true,
+            "height": 10
+          },
+          "eunospaya": {
+            "type": "buried",
+            "active": true,
+            "height": 10
+          },
+          "fortcanning": {
+            "type": "buried",
+            "active": true,
+            "height": 10
+          },
+          "fortcanningmuseum": {
+            "type": "buried",
+            "active": true,
+            "height": 10
+          },
+          "fortcanningpark": {
+            "type": "buried",
+            "active": true,
+            "height": 10
+          },
+          "fortcanninghill": {
+            "type": "buried",
+            "active": true,
+            "height": 10
+          },
+          "fortcanningroad": {
+            "type": "buried",
+            "active": true,
+            "height": 10
+          },
+          "fortcanningcrunch": {
+            "type": "buried",
+            "active": true,
+            "height": 10
+          },
+          "fortcanningspring": {
+            "type": "buried",
+            "active": true,
+            "height": 10
+          },
+          "fortcanninggreatworld": {
+            "type": "buried",
+            "active": true,
+            "height": 10
+          },
+          "fortcanningepilogue": {
+            "type": "buried",
+            "active": true,
+            "height": 10
+          },
+          "grandcentral": {
+            "type": "buried",
+            "active": true,
+            "height": 10
+          },
+          "grandcentralepilogue": {
+            "type": "buried",
+            "active": true,
+            "height": 10
+          },
+          "metachain": {
+            "type": "buried",
+            "active": true,
+            "height": 10
+          },
+          "df23upgrade": {
+            "type": "buried",
+            "active": true,
+            "height": 10
+          },
+          "df24upgrade": {
+            "type": "buried",
+            "active": true,
+            "height": 10
+          },
+          "testdummy": {
+            "type": "bip9",
+            "bip9": {
+              "status": "defined",
+              "startTime": 0,
+              "timeout": 9223372036854775807,
+              "since": 0
+            },
+            "active": false
+          }
+        },
+        "warnings": ""
+      },
+      "source_balance": [
+        "3.00000000@DFI"
+      ],
+      "destination_balance": [
+        "2.00000000@DFI"
+      ],
+      "mempool": [],
+      "binary_sha256": "d1fceb459adbe2857cc9a57cc2742e0e5eaa57f7cf4ab6ea0c78ed0a1968b9fb  /usr/local/bin/defid\nf7d98ffbee493eb9894961d02e9f24336c1d450cef0d6b01168f7e3b83ade419  /usr/local/bin/defi-cli\n"
+    },
+    {
+      "node": "defichain-lab-node2-1",
+      "image": "defichain-lab:review-13bd9069a2",
+      "image_id": "sha256:51c2a26391020ae7d5b2febb5ca71f42c80f551c72218b6d97df59c3d23fe26b",
+      "command": [
+        "-conf=/etc/defichain/defi.conf",
+        "-datadir=/data",
+        "-transferaggregationheight=108",
+        "-dvmownerskipcheck=0"
+      ],
+      "chain": {
+        "chain": "regtest",
+        "blocks": 108,
+        "headers": 108,
+        "bestblockhash": "30f0530cd83157c80516cfd3184bf0724e80543ec8c4f8a45e62653112669438",
+        "difficulty": 4.656542373906925e-10,
+        "mediantime": 1794172262,
+        "verificationprogress": 1,
+        "initialblockdownload": false,
+        "chainwork": "00000000000000000000000000000000000000000000000000000000000000da",
+        "size_on_disk": 47574,
+        "pruned": false,
+        "softforks": {
+          "amk": {
+            "type": "buried",
+            "active": true,
+            "height": 10
+          },
+          "bayfront": {
+            "type": "buried",
+            "active": true,
+            "height": 10
+          },
+          "clarkequay": {
+            "type": "buried",
+            "active": true,
+            "height": 10
+          },
+          "dakota": {
+            "type": "buried",
+            "active": true,
+            "height": 10
+          },
+          "dakotacrescent": {
+            "type": "buried",
+            "active": true,
+            "height": 10
+          },
+          "eunos": {
+            "type": "buried",
+            "active": true,
+            "height": 10
+          },
+          "eunospaya": {
+            "type": "buried",
+            "active": true,
+            "height": 10
+          },
+          "fortcanning": {
+            "type": "buried",
+            "active": true,
+            "height": 10
+          },
+          "fortcanningmuseum": {
+            "type": "buried",
+            "active": true,
+            "height": 10
+          },
+          "fortcanningpark": {
+            "type": "buried",
+            "active": true,
+            "height": 10
+          },
+          "fortcanninghill": {
+            "type": "buried",
+            "active": true,
+            "height": 10
+          },
+          "fortcanningroad": {
+            "type": "buried",
+            "active": true,
+            "height": 10
+          },
+          "fortcanningcrunch": {
+            "type": "buried",
+            "active": true,
+            "height": 10
+          },
+          "fortcanningspring": {
+            "type": "buried",
+            "active": true,
+            "height": 10
+          },
+          "fortcanninggreatworld": {
+            "type": "buried",
+            "active": true,
+            "height": 10
+          },
+          "fortcanningepilogue": {
+            "type": "buried",
+            "active": true,
+            "height": 10
+          },
+          "grandcentral": {
+            "type": "buried",
+            "active": true,
+            "height": 10
+          },
+          "grandcentralepilogue": {
+            "type": "buried",
+            "active": true,
+            "height": 10
+          },
+          "metachain": {
+            "type": "buried",
+            "active": true,
+            "height": 10
+          },
+          "df23upgrade": {
+            "type": "buried",
+            "active": true,
+            "height": 10
+          },
+          "df24upgrade": {
+            "type": "buried",
+            "active": true,
+            "height": 10
+          },
+          "testdummy": {
+            "type": "bip9",
+            "bip9": {
+              "status": "defined",
+              "startTime": 0,
+              "timeout": 9223372036854775807,
+              "since": 0
+            },
+            "active": false
+          }
+        },
+        "warnings": ""
+      },
+      "source_balance": [
+        "3.00000000@DFI"
+      ],
+      "destination_balance": [
+        "2.00000000@DFI"
+      ],
+      "mempool": [],
+      "binary_sha256": "d1fceb459adbe2857cc9a57cc2742e0e5eaa57f7cf4ab6ea0c78ed0a1968b9fb  /usr/local/bin/defid\nf7d98ffbee493eb9894961d02e9f24336c1d450cef0d6b01168f7e3b83ade419  /usr/local/bin/defi-cli\n"
+    },
+    {
+      "node": "defichain-lab-node3-1",
+      "image": "defichain-lab:review-13bd9069a2",
+      "image_id": "sha256:51c2a26391020ae7d5b2febb5ca71f42c80f551c72218b6d97df59c3d23fe26b",
+      "command": [
+        "-conf=/etc/defichain/defi.conf",
+        "-datadir=/data",
+        "-transferaggregationheight=108",
+        "-dvmownerskipcheck=0"
+      ],
+      "chain": {
+        "chain": "regtest",
+        "blocks": 108,
+        "headers": 108,
+        "bestblockhash": "30f0530cd83157c80516cfd3184bf0724e80543ec8c4f8a45e62653112669438",
+        "difficulty": 4.656542373906925e-10,
+        "mediantime": 1794172262,
+        "verificationprogress": 1,
+        "initialblockdownload": false,
+        "chainwork": "00000000000000000000000000000000000000000000000000000000000000da",
+        "size_on_disk": 47574,
+        "pruned": false,
+        "softforks": {
+          "amk": {
+            "type": "buried",
+            "active": true,
+            "height": 10
+          },
+          "bayfront": {
+            "type": "buried",
+            "active": true,
+            "height": 10
+          },
+          "clarkequay": {
+            "type": "buried",
+            "active": true,
+            "height": 10
+          },
+          "dakota": {
+            "type": "buried",
+            "active": true,
+            "height": 10
+          },
+          "dakotacrescent": {
+            "type": "buried",
+            "active": true,
+            "height": 10
+          },
+          "eunos": {
+            "type": "buried",
+            "active": true,
+            "height": 10
+          },
+          "eunospaya": {
+            "type": "buried",
+            "active": true,
+            "height": 10
+          },
+          "fortcanning": {
+            "type": "buried",
+            "active": true,
+            "height": 10
+          },
+          "fortcanningmuseum": {
+            "type": "buried",
+            "active": true,
+            "height": 10
+          },
+          "fortcanningpark": {
+            "type": "buried",
+            "active": true,
+            "height": 10
+          },
+          "fortcanninghill": {
+            "type": "buried",
+            "active": true,
+            "height": 10
+          },
+          "fortcanningroad": {
+            "type": "buried",
+            "active": true,
+            "height": 10
+          },
+          "fortcanningcrunch": {
+            "type": "buried",
+            "active": true,
+            "height": 10
+          },
+          "fortcanningspring": {
+            "type": "buried",
+            "active": true,
+            "height": 10
+          },
+          "fortcanninggreatworld": {
+            "type": "buried",
+            "active": true,
+            "height": 10
+          },
+          "fortcanningepilogue": {
+            "type": "buried",
+            "active": true,
+            "height": 10
+          },
+          "grandcentral": {
+            "type": "buried",
+            "active": true,
+            "height": 10
+          },
+          "grandcentralepilogue": {
+            "type": "buried",
+            "active": true,
+            "height": 10
+          },
+          "metachain": {
+            "type": "buried",
+            "active": true,
+            "height": 10
+          },
+          "df23upgrade": {
+            "type": "buried",
+            "active": true,
+            "height": 10
+          },
+          "df24upgrade": {
+            "type": "buried",
+            "active": true,
+            "height": 10
+          },
+          "testdummy": {
+            "type": "bip9",
+            "bip9": {
+              "status": "defined",
+              "startTime": 0,
+              "timeout": 9223372036854775807,
+              "since": 0
+            },
+            "active": false
+          }
+        },
+        "warnings": ""
+      },
+      "source_balance": [
+        "3.00000000@DFI"
+      ],
+      "destination_balance": [
+        "2.00000000@DFI"
+      ],
+      "mempool": [],
+      "binary_sha256": "d1fceb459adbe2857cc9a57cc2742e0e5eaa57f7cf4ab6ea0c78ed0a1968b9fb  /usr/local/bin/defid\nf7d98ffbee493eb9894961d02e9f24336c1d450cef0d6b01168f7e3b83ade419  /usr/local/bin/defi-cli\n"
+    }
+  ]
+}

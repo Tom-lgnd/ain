@@ -1,0 +1,14 @@
+Tested source: 13bd9069a267944d70e1c8d13fbe32ee457942f0
+Environment: three persistent Docker regtest nodes; dummypos.
+Aggregation activation height: 108.
+Cross-wallet DFI recipients enabled with -dvmownerskipcheck=0.
+PASS: wallet transfer included in block 104 on all nodes.
+PASS: account transfer included in block 106 before activation.
+PASS: account transfer included in activation block 108.
+PASS: identical chain tips and checked account balances on all nodes.
+PASS: identical daemon and CLI checksums across all nodes.
+Final checked balances: source 3 DFI; destination 2 DFI.
+Final mempools empty; initial block download false on all nodes.
+This records normal operation, not an additional malformed-transfer test.
+Production PoS and historical mainnet compatibility remain unverified.
+Compose files are configuration evidence; referenced configs are omitted.

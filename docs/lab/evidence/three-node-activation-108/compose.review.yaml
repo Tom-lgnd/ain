@@ -1,0 +1,22 @@
+services:
+  node1:
+    image: defichain-lab:review-13bd9069a2
+    command:
+      - -conf=/etc/defichain/defi.conf
+      - -datadir=/data
+      - -transferaggregationheight=108
+      - -dvmownerskipcheck=0
+  node2:
+    image: defichain-lab:review-13bd9069a2
+    command:
+      - -conf=/etc/defichain/defi.conf
+      - -datadir=/data
+      - -transferaggregationheight=108
+      - -dvmownerskipcheck=0
+  node3:
+    image: defichain-lab:review-13bd9069a2
+    command:
+      - -conf=/etc/defichain/defi.conf
+      - -datadir=/data
+      - -transferaggregationheight=108
+      - -dvmownerskipcheck=0
