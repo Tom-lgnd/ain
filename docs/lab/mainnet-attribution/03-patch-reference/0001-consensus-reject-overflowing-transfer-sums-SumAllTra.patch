@@ -1,0 +1,398 @@
+From 8285205262faccd5975aead9a184ad9a55458865 Mon Sep 17 00:00:00 2001
+From: DeFiChain community contributor (AI-assisted, Claude) <noreply@anthropic.com>
+Date: Wed, 4 Nov 2026 12:56:07 +0000
+Subject: [PATCH] consensus: reject overflowing transfer sums
+ (SumAllTransfers), DF25
+
+SumAllTransfers() ignored the Res returned by CBalances::AddBalances().
+When a per-token addition overflowed CAmount, CBalances::Add() returned an
+error without touching the sum, so the overflowing amount (and any further
+tokens of that recipient) silently dropped out of the total while every
+recipient was still credited in full.
+
+Exploited on mainnet with AccountToAccount (one small amount + an amount
+that overflows the sum, to two different recipients):
+- block 6564035, tx c0248c39...cfef0e (03.11.2026 00:13 UTC)
+- block 6566081, tx bc2e5a68...b2e8ac (03.11.2026 19:02 UTC)
+Each debited only the small amount and credited ~92.23 bn DFI.
+
+Affected consensus paths: AccountToAccount, AnyAccountsToAccounts,
+UtxosToAccount (sum compared with burnt amount) and AddPoolLiquidity
+(sum smaller than debited amounts).
+
+From DF25Height these paths use SumAllTransfersChecked(), which
+rejects non-positive amounts and per-token overflow. Below DF25Height the
+legacy behaviour is kept so historical blocks still validate.
+
+Mainnet DF25Height is set to 6566082 (earliest height that keeps all
+known blocks valid) and must be confirmed by the Development SIG;
+6564035 would make both exploit blocks invalid.
+
+Adds balances_tests.cpp documenting the legacy behaviour and the fix.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01UpC5GGX1RBbUYcgscmagMt
+---
+ src/Makefile.test.include       |  1 +
+ src/chainparams.cpp             | 13 +++++
+ src/consensus/params.h          |  2 +
+ src/dfi/balances.h              | 23 +++++++++
+ src/dfi/consensus/accounts.cpp  | 28 ++++++++---
+ src/dfi/consensus/poolpairs.cpp |  6 ++-
+ src/dfi/consensus/txvisitor.cpp | 10 ++++
+ src/dfi/consensus/txvisitor.h   |  2 +
+ src/init.cpp                    |  1 +
+ src/rpc/blockchain.cpp          |  1 +
+ src/test/balances_tests.cpp     | 84 +++++++++++++++++++++++++++++++++
+ 11 files changed, 163 insertions(+), 8 deletions(-)
+ create mode 100644 src/test/balances_tests.cpp
+
+diff --git a/src/Makefile.test.include b/src/Makefile.test.include
+index f0ef44b..e04a42f 100644
+--- a/src/Makefile.test.include
++++ b/src/Makefile.test.include
+@@ -87,6 +87,7 @@ DEFI_TESTS =\
+   test/applytx_tests.cpp \
+   test/base32_tests.cpp \
+   test/base58_tests.cpp \
++  test/balances_tests.cpp \
+   test/base64_tests.cpp \
+   test/bech32_tests.cpp \
+   test/bip32_tests.cpp \
+diff --git a/src/chainparams.cpp b/src/chainparams.cpp
+index 72361a1..f49efd0 100644
+--- a/src/chainparams.cpp
++++ b/src/chainparams.cpp
+@@ -144,6 +144,14 @@ public:
+         consensus.DF22MetachainHeight = 3462000; // Nov 15th, 2023.
+         consensus.DF23Height = 4006000; // May 23th, 2024.
+         consensus.DF24Height = 4463000; // Oct 29th, 2024.
++        // DF25: reject overflowing / non-positive transfer sums (SumAllTransfers).
++        // Overflow txs found on mainnet (scan up to block 6568001, 04.11.2026):
++        //   6564035 c0248c39...cfef0e and 6566081 bc2e5a68...b2e8ac (AccountToAccount)
++        // Choose ONE (Development SIG):
++        //   6564035 -> both exploit blocks become invalid (rollback, needs invalidateblock)
++        //   6566082 -> earliest height without reorg of known blocks; created DFI stay
++        //              (re-scan the chain before release, a later overflow tx moves this)
++        consensus.DF25Height = 6566082; // TODO(SIG): confirm activation height
+ 
+         consensus.pos.diffLimit = uint256S("00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
+ //        consensus.pos.nTargetTimespan = 14 * 24 * 60 * 60; // two weeks
+@@ -436,6 +444,7 @@ public:
+         consensus.DF22MetachainHeight = 1150040;
+         consensus.DF23Height = 1507200;
+         consensus.DF24Height = 1810800;
++        consensus.DF25Height = std::numeric_limits<int>::max(); // TODO: set testnet height
+ 
+         consensus.pos.diffLimit = uint256S("00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
+ //        consensus.pos.nTargetTimespan = 14 * 24 * 60 * 60; // two weeks
+@@ -660,6 +669,7 @@ public:
+         consensus.DF22MetachainHeight = 1586750;
+         consensus.DF23Height = 1985600;
+         consensus.DF24Height = 2241000;
++        consensus.DF25Height = std::numeric_limits<int>::max(); // TODO: set changi height
+ 
+         consensus.pos.diffLimit = uint256S("00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
+         consensus.pos.nTargetTimespan = 5 * 60; // 5 min == 10 blocks
+@@ -878,6 +888,7 @@ public:
+         consensus.DF22MetachainHeight = 1586750;
+         consensus.DF23Height = std::numeric_limits<int>::max();
+         consensus.DF24Height = std::numeric_limits<int>::max();
++        consensus.DF25Height = std::numeric_limits<int>::max();
+ 
+         consensus.pos.diffLimit = uint256S("00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
+         consensus.pos.nTargetTimespan = 5 * 60; // 5 min == 10 blocks
+@@ -1100,6 +1111,7 @@ public:
+         consensus.DF22MetachainHeight = 10000000;
+         consensus.DF23Height = 10000000;
+         consensus.DF24Height = 10000000;
++        consensus.DF25Height = 10000000;
+ 
+         consensus.pos.diffLimit = uint256S("00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
+         consensus.pos.nTargetTimespan = 14 * 24 * 60 * 60; // two weeks
+@@ -1371,6 +1383,7 @@ void SetupCommonArgActivationParams(Consensus::Params &consensus) {
+     UpdateHeightValidation("Metachain", "-metachainheight", consensus.DF22MetachainHeight);
+     UpdateHeightValidation("DF23 Upgrade Height", "-df23height", consensus.DF23Height);
+     UpdateHeightValidation("DF24 Upgrade Height", "-df24height", consensus.DF24Height);
++    UpdateHeightValidation("DF25 Upgrade Height", "-df25height", consensus.DF25Height);
+ 
+     if (gArgs.GetBoolArg("-simulatemainnet", false)) {
+         consensus.pos.nTargetTimespan = 5 * 60; // 5 min == 10 blocks
+diff --git a/src/consensus/params.h b/src/consensus/params.h
+index 17bb5f2..c4c295d 100644
+--- a/src/consensus/params.h
++++ b/src/consensus/params.h
+@@ -104,6 +104,8 @@ struct Params {
+     int DF22MetachainHeight;
+     int DF23Height;
+     int DF24Height;
++    /** Fix for the SumAllTransfers overflow (exploit 03.11.2026, block 6564035) */
++    int DF25Height;
+ 
+     /** Foundation share after AMK, normalized to COIN = 100% */
+     CAmount foundationShareDFIP1;
+diff --git a/src/dfi/balances.h b/src/dfi/balances.h
+index 202b1ae..e521577 100644
+--- a/src/dfi/balances.h
++++ b/src/dfi/balances.h
+@@ -262,6 +262,11 @@ struct CStatsTokenBalances {
+     }
+ };
+ 
++// LEGACY: silently drops any addition that fails (negative amount or int64
++// overflow), so the returned sum can be far smaller than the sum of the
++// individual transfers. Consensus code must keep using it below DF25Height to
++// stay compatible with historical blocks, but MUST use SumAllTransfersChecked
++// from DF25Height on (see CCustomTxVisitor::SumTransfers).
+ inline CBalances SumAllTransfers(const CAccounts &to) {
+     CBalances sum;
+     for (const auto &kv : to) {
+@@ -270,6 +275,24 @@ inline CBalances SumAllTransfers(const CAccounts &to) {
+     return sum;
+ }
+ 
++// Checked variant: every single amount has to be positive and the per-token
++// sum must not overflow CAmount. Otherwise an error is returned instead of a
++// truncated sum.
++inline ResVal<CBalances> SumAllTransfersChecked(const CAccounts &to) {
++    CBalances sum;
++    for (const auto &[owner, balances] : to) {
++        for (const auto &[tokenId, amount] : balances.balances) {
++            if (amount <= 0) {
++                return Res::Err("transfer amount must be positive (%s@%d)", GetDecimalString(amount), tokenId.v);
++            }
++        }
++        if (auto res = sum.AddBalances(balances.balances); !res) {
++            return Res::Err("sum of transfers overflows: %s", res.msg);
++        }
++    }
++    return {sum, Res::Ok()};
++}
++
+ struct BalanceKey {
+     CScript owner;
+     DCT_ID tokenID;
+diff --git a/src/dfi/consensus/accounts.cpp b/src/dfi/consensus/accounts.cpp
+index 4b06e9b..e7ac4b5 100644
+--- a/src/dfi/consensus/accounts.cpp
++++ b/src/dfi/consensus/accounts.cpp
+@@ -30,10 +30,13 @@ Res CAccountsConsensus::operator()(const CUtxosToAccountMessage &obj) const {
+         return burnt;
+     }
+ 
+-    const auto mustBeBurnt = SumAllTransfers(obj.to);
+-    if (*burnt.val != mustBeBurnt) {
++    const auto mustBeBurnt = SumTransfers(obj.to);
++    if (!mustBeBurnt) {
++        return mustBeBurnt;
++    }
++    if (*burnt.val != *mustBeBurnt) {
+         return Res::Err(
+-            "transfer tokens mismatch burnt tokens: (%s) != (%s)", mustBeBurnt.ToString(), burnt.val->ToString());
++            "transfer tokens mismatch burnt tokens: (%s) != (%s)", mustBeBurnt->ToString(), burnt.val->ToString());
+     }
+ 
+     // transfer
+@@ -76,8 +79,13 @@ Res CAccountsConsensus::operator()(const CAccountToAccountMessage &obj) const {
+         return res;
+     }
+ 
++    const auto sumTo = SumTransfers(obj.to);
++    if (!sumTo) {
++        return sumTo;
++    }
++
+     // transfer
+-    if (auto res = SubBalanceDelShares(obj.from, SumAllTransfers(obj.to)); !res) {
++    if (auto res = SubBalanceDelShares(obj.from, *sumTo); !res) {
+         return res;
+     }
+ 
+@@ -93,10 +101,16 @@ Res CAccountsConsensus::operator()(const CAnyAccountsToAccountsMessage &obj) con
+     }
+ 
+     // compare
+-    const auto sumFrom = SumAllTransfers(obj.from);
+-    const auto sumTo = SumAllTransfers(obj.to);
++    const auto sumFrom = SumTransfers(obj.from);
++    if (!sumFrom) {
++        return sumFrom;
++    }
++    const auto sumTo = SumTransfers(obj.to);
++    if (!sumTo) {
++        return sumTo;
++    }
+ 
+-    if (sumFrom != sumTo) {
++    if (*sumFrom != *sumTo) {
+         return Res::Err("sum of inputs (from) != sum of outputs (to)");
+     }
+ 
+diff --git a/src/dfi/consensus/poolpairs.cpp b/src/dfi/consensus/poolpairs.cpp
+index e91882b..77d873f 100644
+--- a/src/dfi/consensus/poolpairs.cpp
++++ b/src/dfi/consensus/poolpairs.cpp
+@@ -187,7 +187,11 @@ Res CPoolPairsConsensus::operator()(const CPoolSwapMessageV2 &obj) const {
+ }
+ 
+ Res CPoolPairsConsensus::operator()(const CLiquidityMessage &obj) const {
+-    CBalances sumTx = SumAllTransfers(obj.from);
++    const auto sumRes = SumTransfers(obj.from);
++    if (!sumRes) {
++        return sumRes;
++    }
++    const CBalances &sumTx = *sumRes;
+     if (sumTx.balances.size() != 2) {
+         return Res::Err("the pool pair requires two tokens");
+     }
+diff --git a/src/dfi/consensus/txvisitor.cpp b/src/dfi/consensus/txvisitor.cpp
+index 4b032ef..58eed65 100644
+--- a/src/dfi/consensus/txvisitor.cpp
++++ b/src/dfi/consensus/txvisitor.cpp
+@@ -344,6 +344,16 @@ Res CCustomTxVisitor::SubBalancesDelShares(const CAccounts &accounts) const {
+     return Res::Ok();
+ }
+ 
++ResVal<CBalances> CCustomTxVisitor::SumTransfers(const CAccounts &accounts) const {
++    const auto &consensus = txCtx.GetConsensus();
++    const auto height = txCtx.GetHeight();
++    if (height >= static_cast<uint32_t>(consensus.DF25Height)) {
++        return SumAllTransfersChecked(accounts);
++    }
++    // Pre-fork behaviour kept for historical block validation
++    return {SumAllTransfers(accounts), Res::Ok()};
++}
++
+ Res CCustomTxVisitor::CollateralPctCheck(const bool hasDUSDLoans,
+                                          const CVaultAssets &vaultAssets,
+                                          const uint32_t ratio) const {
+diff --git a/src/dfi/consensus/txvisitor.h b/src/dfi/consensus/txvisitor.h
+index 2039cec..04bd737 100644
+--- a/src/dfi/consensus/txvisitor.h
++++ b/src/dfi/consensus/txvisitor.h
+@@ -73,6 +73,8 @@ protected:
+     Res AddBalanceSetShares(const CScript &owner, const CBalances &balance) const;
+     Res AddBalancesSetShares(const CAccounts &accounts) const;
+     Res SubBalancesDelShares(const CAccounts &accounts) const;
++    // Sum of all transfers; strictly checked (no overflow, positive amounts) from DF25Height on
++    ResVal<CBalances> SumTransfers(const CAccounts &accounts) const;
+     Res CollateralPctCheck(const bool hasDUSDLoans, const CVaultAssets &collateralsLoans, const uint32_t ratio) const;
+     ResVal<CVaultAssets> CheckCollateralRatio(const CVaultId &vaultId,
+                                               const CLoanSchemeData &scheme,
+diff --git a/src/init.cpp b/src/init.cpp
+index e135c8a..ef83c59 100644
+--- a/src/init.cpp
++++ b/src/init.cpp
+@@ -533,6 +533,7 @@ void SetupServerArgs()
+     gArgs.AddArg("-metachainheight", "Metachain fork activation height (regtest only)", ArgsManager::ALLOW_ANY | ArgsManager::DEBUG_ONLY, OptionsCategory::CHAINPARAMS);
+     gArgs.AddArg("-df23height", "DF23 fork activation height (regtest only)", ArgsManager::ALLOW_ANY | ArgsManager::DEBUG_ONLY, OptionsCategory::CHAINPARAMS);
+     gArgs.AddArg("-df24height", "DF24 fork activation height (regtest only)", ArgsManager::ALLOW_ANY | ArgsManager::DEBUG_ONLY, OptionsCategory::CHAINPARAMS);
++    gArgs.AddArg("-df25height", "DF25 fork activation height (regtest only)", ArgsManager::ALLOW_ANY | ArgsManager::DEBUG_ONLY, OptionsCategory::CHAINPARAMS);
+     gArgs.AddArg("-jellyfish_regtest", "Configure the regtest network for jellyfish testing", ArgsManager::ALLOW_ANY | ArgsManager::DEBUG_ONLY, OptionsCategory::OPTIONS);
+     gArgs.AddArg("-regtest-skip-loan-collateral-validation", "Skip loan collateral check for jellyfish testing", ArgsManager::ALLOW_ANY | ArgsManager::DEBUG_ONLY, OptionsCategory::OPTIONS);
+     gArgs.AddArg("-regtest-minttoken-simulate-mainnet", "Simulate mainnet for minttokens on regtest -  default behavior on regtest is to allow anyone to mint mintable tokens for ease of testing", ArgsManager::ALLOW_ANY | ArgsManager::DEBUG_ONLY, OptionsCategory::OPTIONS);
+diff --git a/src/rpc/blockchain.cpp b/src/rpc/blockchain.cpp
+index 9c4501c..1bdee24 100644
+--- a/src/rpc/blockchain.cpp
++++ b/src/rpc/blockchain.cpp
+@@ -1559,6 +1559,7 @@ UniValue getblockchaininfo(const JSONRPCRequest& request)
+     BuriedForkDescPushBack(softforks, "metachain", consensusParams.DF22MetachainHeight);
+     BuriedForkDescPushBack(softforks, "df23upgrade", consensusParams.DF23Height);
+     BuriedForkDescPushBack(softforks, "df24upgrade", consensusParams.DF24Height);
++    BuriedForkDescPushBack(softforks, "df25upgrade", consensusParams.DF25Height);
+     BIP9SoftForkDescPushBack(softforks, "testdummy", consensusParams, Consensus::DEPLOYMENT_TESTDUMMY);
+     obj.pushKV("softforks",             softforks);
+ 
+diff --git a/src/test/balances_tests.cpp b/src/test/balances_tests.cpp
+new file mode 100644
+index 0000000..e0bd189
+--- /dev/null
++++ b/src/test/balances_tests.cpp
+@@ -0,0 +1,84 @@
++// Copyright (c) DeFi Blockchain Developers
++// Distributed under the MIT software license, see the accompanying
++// file LICENSE or http://www.opensource.org/licenses/mit-license.php.
++
++#include <dfi/balances.h>
++#include <test/setup_common.h>
++
++#include <boost/test/unit_test.hpp>
++
++#include <limits>
++
++BOOST_FIXTURE_TEST_SUITE(balances_tests, BasicTestingSetup)
++
++static CScript Owner(uint8_t n) {
++    return CScript() << OP_DUP << OP_HASH160 << std::vector<uint8_t>(20, n) << OP_EQUALVERIFY << OP_CHECKSIG;
++}
++
++static CBalances Bal(DCT_ID id, CAmount amount) {
++    CBalances b;
++    b.balances[id] = amount;
++    return b;
++}
++
++BOOST_AUTO_TEST_CASE(sum_all_transfers_normal)
++{
++    CAccounts to;
++    to[Owner(1)] = Bal(DCT_ID{0}, 5 * COIN);
++    to[Owner(2)] = Bal(DCT_ID{0}, 7 * COIN);
++    to[Owner(3)] = Bal(DCT_ID{2}, 1 * COIN);
++
++    const auto legacy = SumAllTransfers(to);
++    const auto checked = SumAllTransfersChecked(to);
++    BOOST_REQUIRE(checked);
++    BOOST_CHECK(legacy == *checked);
++    BOOST_CHECK_EQUAL(checked->balances.at(DCT_ID{0}), 12 * COIN);
++    BOOST_CHECK_EQUAL(checked->balances.at(DCT_ID{2}), 1 * COIN);
++}
++
++// Exploit of 03.11.2026 (block 6564035): 1 sat + INT64_MAX to two recipients.
++BOOST_AUTO_TEST_CASE(sum_all_transfers_overflow)
++{
++    const auto maxAmount = std::numeric_limits<CAmount>::max();
++
++    CAccounts to;
++    to[Owner(1)] = Bal(DCT_ID{0}, 1);
++    to[Owner(2)] = Bal(DCT_ID{0}, maxAmount);
++    BOOST_REQUIRE(Owner(1) < Owner(2)); // 1 sat is summed first, as on mainnet
++
++    // Legacy behaviour (documents the bug): the overflowing addition is dropped
++    const auto legacy = SumAllTransfers(to);
++    BOOST_CHECK_EQUAL(legacy.balances.at(DCT_ID{0}), 1);
++
++    // Fixed behaviour: error instead of a truncated sum
++    const auto checked = SumAllTransfersChecked(to);
++    BOOST_CHECK(!checked);
++}
++
++// Overflow on one token must not silently hide other tokens of the same recipient
++BOOST_AUTO_TEST_CASE(sum_all_transfers_overflow_multi_token)
++{
++    const auto maxAmount = std::numeric_limits<CAmount>::max();
++
++    CAccounts to;
++    to[Owner(1)] = Bal(DCT_ID{0}, 1);
++    CBalances second;
++    second.balances[DCT_ID{0}] = maxAmount;
++    second.balances[DCT_ID{2}] = 100 * COIN;
++    to[Owner(2)] = second;
++
++    const auto legacy = SumAllTransfers(to);
++    BOOST_CHECK(legacy.balances.find(DCT_ID{2}) == legacy.balances.end()); // token 2 vanished from the sum
++
++    BOOST_CHECK(!SumAllTransfersChecked(to));
++}
++
++BOOST_AUTO_TEST_CASE(sum_all_transfers_non_positive)
++{
++    CAccounts to;
++    to[Owner(1)] = Bal(DCT_ID{0}, 5 * COIN);
++    to[Owner(2)] = Bal(DCT_ID{0}, -1);
++    BOOST_CHECK(!SumAllTransfersChecked(to));
++}
++
++BOOST_AUTO_TEST_SUITE_END()
+-- 
+2.43.0
+
